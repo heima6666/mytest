@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace：命名空间，用于隔离sql，还有一个很重要的作用，后面会讲 -->
+<mapper namespace="com.itheima.mapper.UserMapper">
+	
+	<!-- 根据用户ID查询用户 -->
+	<select id="findUserById" resultType="com.itheima.pojo.User" parameterType="Integer" >
+		select * FROM user  where id = #{id};
+	</select>
+	
+	<!-- 根据用户名称模糊查询 -->
+	<select id="findUserListByUsername" resultType="com.itheima.pojo.User" parameterType="queryVo">
+		select * from user where username like '%${user.username}%';
+	</select>
+	
+	<!-- 查询用户表数据条数 -->
+	<select id="findCountUser" resultType="Integer">
+		select count(*) from user;
+	</select>
+	
+	<!-- 声明sql片段 -->
+	<sql id="userField">
+		id, username,sex,birthday,address	
+	</sql>
+	
+	<!-- 根据性别和名字查询用户 -->
+	<select id="findUserBySexAndUsername" resultType="User" parameterType="user">
+		select 
+			<include refid="userField"/>
+		from user u 
+		<where>
+			<if test="sex != null">
+				and u.sex = #{sex} 
+			</if>
+			<if test="username != null and username != ''">
+				and u.username like '%${username}%';
+			</if>
+		</where>
+	</select>
+	
+	<!--  -->
+	<select id="QueryUserByIds" parameterType="queryVo" resultType="User">
+		select * from user 
+		<where>
+			<foreach collection="ids" item="item" open="id in (" close=")" separator=",">
+				#{item}	
+			</foreach>
+		</where>
+	</select>
+	
+	<resultMap type="User" id="userOrderMapper">
+		<id property="id" column="id"/>
+		<result property="username" column="username"/>
+		<result property="address" column="address"/>
+		<result property="birthday" column="birthday"/>
+		<result property="sex" column="sex"/>
+		<!-- 一对多 -->
+		<collection property="orders" ofType="Orders" javaType="list">
+			<id property="id" column="oid"/>
+			<result property="createtime" column="createtime"/>
+			<result property="number" column="number"/>
+		</collection>
+	</resultMap>
+	
+	<!-- 一对多    查询所有用户信息及用户关联的订单信息。 -->
+	<select id="queryUserAndOrders" resultMap="userOrderMapper">
+		SELECT 
+			u.id,
+			u.username,
+			u.address,
+			u.birthday,
+			u.sex,
+			o.id oid,
+			o.createtime,
+			o.number 
+		FROM USER u LEFT JOIN orders o 
+		ON 
+			u.id = o.user_id;
+	</select>
+	
+</mapper>
